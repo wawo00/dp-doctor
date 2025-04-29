@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: dp-doctor   # 定义当前项目的应用名称
+  profiles:
+    active: dev

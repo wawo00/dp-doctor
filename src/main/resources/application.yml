@@ -1,5 +1,13 @@
 spring:
   application:
     name: dp-doctor   # 定义当前项目的应用名称
+  ai:
+    openai:
+      api-key: sk-rnmzedekocnzyodknfcwykrjmsvyupbqbwdlkmukyptygizh
+      base-url: https://api.siliconflow.cn
+      chat:
+        options:
+          model: deepseek-ai/DeepSeek-V3
+
   profiles:
     active: dev

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>stream demo</title>
+  </head>
+  <body>
+    <h2>stream demo</h2>
+    <button onclick="startStream()">start receive event</button>
+    <div id="output" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></div>
+
+    <script>
+      function startStream() {
+        const output = document.getElementById('output');
+        output.innerHTML = ''; // 清空之前的内容
+
+        const eventSource = new EventSource('/stream');
+
+        eventSource.onmessage = function(e) {
+          const newElement = document.createElement('div');
+          newElement.textContent = "print -> " + e.data;
+          output.appendChild(newElement);
+        };
+
+        eventSource.onerror = function(e) {
+          console.error('EventSource error:', e);
+          eventSource.close();
+          const newElement = document.createElement('div');
+          newElement.textContent = "close connect";
+          output.appendChild(newElement);
+        };
+      }
+    </script>
+  </body>
+</html>

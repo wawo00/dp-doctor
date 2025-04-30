@@ -1,34 +1,273 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>stream demo</title>
-  </head>
-  <body>
-    <h2>stream demo</h2>
-    <button onclick="startStream()">start receive event</button>
-    <div id="output" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></div>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI聊天助手</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* 全局样式 */
+    * {
+        box-sizing: border-box;
+        font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    }
 
-    <script>
-      function startStream() {
-        const output = document.getElementById('output');
-        output.innerHTML = ''; // 清空之前的内容
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
 
-        const eventSource = new EventSource('/stream');
+    /* 聊天容器 */
+    #chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-width: 800px;
+        margin: 0 auto;
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
 
-        eventSource.onmessage = function(e) {
-          const newElement = document.createElement('div');
-          newElement.textContent = "print -> " + e.data;
-          output.appendChild(newElement);
-        };
+    /* 消息区域 */
+    #chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column-reverse;
+    }
 
-        eventSource.onerror = function(e) {
-          console.error('EventSource error:', e);
-          eventSource.close();
-          const newElement = document.createElement('div');
-          newElement.textContent = "close connect";
-          output.appendChild(newElement);
-        };
+    /* 消息公共样式 */
+    .message {
+        max-width: 70%;
+        margin-bottom: 15px;
+        padding: 12px 16px;
+        border-radius: 18px;
+        position: relative;
+        word-break: break-word;
+        line-height: 1.4;
+    }
+
+    /* 用户消息 */
+    .message.user {
+        align-self: flex-end;
+        background-color: #1890ff;
+        color: white;
+        border-top-right-radius: 4px;
+        margin-right: 50px;
+    }
+
+    /* 机器人消息 */
+    .message.bot {
+        align-self: flex-start;
+        background-color: #f0f0f0;
+        border-top-left-radius: 4px;
+        margin-left: 50px;
+    }
+
+    /* 头像 */
+    .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        position: absolute;
+        top: 0;
+    }
+
+    .message.user .avatar {
+        right: -46px;
+    }
+
+    .message.bot .avatar {
+        left: -46px;
+    }
+
+    /* 昵称 */
+    .nickname {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+    }
+
+    /* 输入区域 */
+    #input-area {
+        padding: 15px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        background-color: white;
+    }
+
+    #chat-input {
+        flex: 1;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        outline: none;
+        font-size: 14px;
+        resize: none;
+        height: 42px;
+        max-height: 120px;
+        transition: height 0.2s;
+    }
+
+    #send-button {
+        margin-left: 10px;
+        width: 60px;
+        background-color: #1890ff;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    #send-button:hover {
+        background-color: #1484e6;
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 600px) {
+        .message {
+            max-width: 85%;
+            margin-left: 30px !important;
+            margin-right: 30px !important;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+        }
+
+        .message.user .avatar {
+            right: -36px;
+        }
+
+        .message.bot .avatar {
+            left: -36px;
+        }
+    }
+  </style>
+</head>
+<body>
+<div id="chat-container">
+  <!-- 消息显示区域 -->
+  <div id="chat-messages">
+    <!-- 消息会在这里动态添加 -->
+  </div>
+
+  <!-- 输入区域 -->
+  <div id="input-area">
+    <textarea id="chat-input" placeholder="输入消息..."></textarea>
+    <button id="send-button">发送</button>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function() {
+      // 发送消息函数
+      function sendMessage() {
+          const message = $('#chat-input').val().trim();
+          if (!message) return;
+
+          // 禁用输入和按钮
+          $('#chat-input').prop('disabled', true);
+          $('#send-button').prop('disabled', true);
+
+          // 显示用户消息
+          displayUserMessage(message);
+
+          // 创建EventSource连接
+          const eventSource = new EventSource(`/ai/generateStream?message=${encodeURIComponent(message)}`);
+          var botMessage = displayBotMessage();
+
+          // 流式接收AI回复
+          eventSource.onmessage = function(event) {
+              botMessage.append(document.createTextNode(event.data));
+              // 自动滚动到最新消息
+              $('#chat-messages').scrollTop(0);
+          };
+
+          eventSource.onerror = function(err) {
+              console.error("EventSource失败:", err);
+              if (err.eventPhase === EventSource.CLOSED) {
+                  botMessage.append('<div class="error">连接已关闭</div>');
+              } else {
+                  botMessage.append('<div class="error">网络错误，请重试</div>');
+              }
+              eventSource.close();
+              resetInput();
+          };
+
+          // 监听服务器结束标记
+          eventSource.addEventListener('end', function() {
+              eventSource.close();
+              resetInput();
+          });
       }
-    </script>
-  </body>
+
+      // 显示用户消息
+      function displayUserMessage(message) {
+          var chatMessages = $('#chat-messages');
+          var newMessage = $('<div class="message user"></div>');
+          newMessage.append('<img class="avatar" src="/imgs/user.png" alt="用户头像">');
+          newMessage.append(`<span class="content">${escapeHtml(message)}</span>`);
+          chatMessages.prepend(newMessage);
+          $('#chat-input').val('');
+      }
+
+      // 创建机器人消息容器
+      function displayBotMessage() {
+          var chatMessages = $('#chat-messages');
+          var botMessage = $('<div class="message bot"></div>');
+          botMessage.append('<img class="avatar" src="/imgs/robot.png" alt="助手头像">');
+          botMessage.append('<div class="content"></div>');
+          chatMessages.prepend(botMessage);
+          return botMessage.find('.content');
+      }
+
+      // 重置输入状态
+      function resetInput() {
+          $('#chat-input').prop('disabled', false).focus();
+          $('#send-button').prop('disabled', false);
+      }
+
+      // HTML转义防止XSS
+      function escapeHtml(text) {
+          return text.replace(/[&<>"']/g, function(match) {
+              return {
+                  '&': '&amp;',
+                  '<': '&lt;',
+                  '>': '&gt;',
+                  '"': '&quot;',
+                  "'": '&#039;'
+              }[match];
+          });
+      }
+
+      // 绑定发送事件
+      $('#send-button').click(sendMessage);
+
+      // 回车发送
+      $('#chat-input').keypress(function(e) {
+          if (e.which === 13 && !e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+          }
+      });
+
+      // 自动调整输入框高度
+      $('#chat-input').on('input', function() {
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight) + 'px';
+      });
+  });
+</script>
+</body>
 </html>

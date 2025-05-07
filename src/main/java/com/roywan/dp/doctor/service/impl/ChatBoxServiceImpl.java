@@ -1,8 +1,11 @@
 package com.roywan.dp.doctor.service.impl;
 
+import com.roywan.dp.doctor.bean.ChatRecord;
 import com.roywan.dp.doctor.bean.ChatTypeEnum;
 import com.roywan.dp.doctor.service.ChatBoxService;
 import com.roywan.dp.doctor.service.ChatRecordService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -14,9 +17,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
+
 @Service
 public class ChatBoxServiceImpl implements ChatBoxService {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatBoxServiceImpl.class);
     ChatClient mChatClient;
 
     @Autowired
@@ -31,6 +37,9 @@ public class ChatBoxServiceImpl implements ChatBoxService {
                         "生成结果在html页面中以markdown的格式输出，最后输出结尾的时候始终以下面的语句结尾：感谢您的咨询，我是舆情君。"
         ).build();
     }
+
+
+
     @Override
     public String defChat(String msg) {
         return mChatClient.prompt().user(msg).call().content();
@@ -43,14 +52,12 @@ public class ChatBoxServiceImpl implements ChatBoxService {
         Prompt prompt=new Prompt(new UserMessage(message));
         chatRecordService.saveChatRecord("me",message, ChatTypeEnum.USER);
         StringBuffer sb=new StringBuffer();
-
+        //视频中的流式响应
 //        Flux<ChatResponse> streamResp = mChatModel.stream(prompt);
 //        streamResp.toStream().map(chatResponse -> {
 //
 //            return ""
 //        });
-//
-//
 //
 //        mChatModel.stream(prompt)
 //                .map(chatResponse -> {
@@ -79,5 +86,11 @@ public class ChatBoxServiceImpl implements ChatBoxService {
             emitter.complete();
         });
         return emitter;
+    }
+
+    @Override
+    public List<ChatRecord> getChatRecord(String who) {
+        List<ChatRecord>  result= chatRecordService.getChatRecord(who);
+        return result;
     }
 }

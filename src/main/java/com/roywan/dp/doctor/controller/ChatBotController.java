@@ -26,4 +26,9 @@ public class ChatBotController {
     public SseEmitter streamChat(@RequestParam String message){
        return chatBoxService.streamChat(message);
     }
+
+    @GetMapping(value = "/getRecords")
+    public Object getRecords(@RequestParam String who){
+        return chatBoxService.getChatRecord(who);
+    }
 }

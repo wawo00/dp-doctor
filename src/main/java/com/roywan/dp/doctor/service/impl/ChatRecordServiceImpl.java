@@ -30,7 +30,7 @@ public class ChatRecordServiceImpl implements ChatRecordService {
     @Override
     public List<ChatRecord> getChatRecord(String who) {
         QueryWrapper<ChatRecord> queryWrapper=new QueryWrapper<>();
-        queryWrapper.eq("family_member",who);
+        queryWrapper.eq("family_member",who).orderByDesc("chat_time");;
         return chatRecordMapper.selectList(queryWrapper);
     }
 }

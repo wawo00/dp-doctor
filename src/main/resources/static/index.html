@@ -171,6 +171,20 @@
 
 <script>
   $(document).ready(function() {
+
+      const who = "me";  // 这里可以替换成你的身份标识
+
+      // 页面加载时获取历史记录
+      $.getJSON(`/ai/getRecords?who=${who}`, function(data) {
+          data.forEach(record => {
+              const messageElement = $(`<div class="message ${record.chatType === 'USER' ? 'user' : 'bot'}"></div>`);
+              messageElement.text(record.content);
+              $('#chat-messages').append(messageElement);
+          });
+          $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+      });
+
+
       // 发送消息函数
       function sendMessage() {
           const message = $('#chat-input').val().trim();

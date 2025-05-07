@@ -4,6 +4,8 @@ import com.roywan.dp.doctor.bean.ChatRecord;
 import com.roywan.dp.doctor.bean.ChatTypeEnum;
 import com.roywan.dp.doctor.service.ChatBoxService;
 import com.roywan.dp.doctor.service.ChatRecordService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -20,6 +22,7 @@ import java.util.List;
 @Service
 public class ChatBoxServiceImpl implements ChatBoxService {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatBoxServiceImpl.class);
     ChatClient mChatClient;
 
     @Autowired
@@ -87,6 +90,7 @@ public class ChatBoxServiceImpl implements ChatBoxService {
 
     @Override
     public List<ChatRecord> getChatRecord(String who) {
-        return chatRecordService.getChatRecord(who);
+        List<ChatRecord>  result= chatRecordService.getChatRecord(who);
+        return result;
     }
 }

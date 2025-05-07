@@ -11,3 +11,13 @@ spring:
 
   profiles:
     active: dev
+
+  # MyBatisPlus 的配置
+  mybatis-plus:
+    configuration:
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    global-config:
+      db-config:
+        id-type: assign_id
+        update-strategy: not_empty
+    mapper-locations: classpath*:/mappers/*.xml
